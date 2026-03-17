@@ -1,0 +1,14 @@
+.env
+__pycache__/
+dist/
+build/
+*.spec
+*.exe
+old_tools_backup/
+.vscode/
+.idea/
+*.pyc
+*.pyo
+*.pyd
+Thumbs.db
+.DS_Store
