@@ -1022,7 +1022,7 @@ def student_chapter(chapter_no):
         <button class="btn btn2">إرسال الإجابة</button>
       </form>
 
-      {% if answered_qid == q['id'] %}
+     {% if answered_qid == q['id'] %}
   <div class="muted" style="margin-top:10px">نتيجة التصحيح: {{ result_text }}</div>
   <div class="muted" style="margin-top:10px">الجواب النموذجي: {{ q['answer'] }}</div>
 
@@ -2019,35 +2019,87 @@ def manage_exam_questions(exam_id):
         <div class="card">
           <h3>أسئلة الامتحان</h3>
           {% for r in rows %}
-            <div class="q">
-              <b>سؤال {{ loop.index }}</b><br>
+  <div class="q">
+    <b>سؤال {{ loop.index }}</b><br>
 
-              {% if r.get('question') %}
-                {{ r['question']['text'] or '—' }}
+    {% if 'question' in r %}
+      <div style="margin-top:10px">{{ r['question']['text'] or '—' }}</div>
 
-                {% if r['question'].get('image_path') %}
-                  <div style="margin-top:10px">
-                    <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}" style="max-width:220px;border-radius:12px">
-                  </div>
-                {% endif %}
-
-                {% if r['question'].get('file_path') %}
-                  <div style="margin-top:8px">
-                    <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
-                  </div>
-                {% endif %}
-              {% else %}
-                —
-              {% endif %}
-
-              {% if r.get('is_wazari') %}
-                <span class="tag">وزاري</span>
-              {% endif %}
-            </div>
-          {% else %}
-            <div class="muted">لا توجد أسئلة بعد</div>
-          {% endfor %}
+      {% if r['question']['image_path'] %}
+        <div class="question-media">
+          <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}">
         </div>
+      {% endif %}
+
+      {% if r['question']['file_path'] %}
+        <div style="margin-top:8px">
+          <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" class="answer-form">
+        <input type="hidden" name="question_id" value="{{ r['question']['id'] }}">
+        <label>إجابتك
+          <textarea name="text_answer"></textarea>
+        </label>
+        <div class="answer-files">
+          <label>صورة الإجابة
+            <input type="file" name="image_answer" accept="image/*">
+          </label>
+          <label>ملف الإجابة
+            <input type="file" name="file_answer">
+          </label>
+        </div>
+        <br><button class="btn btn2">إرسال الإجابة</button>
+      </form>
+
+    {% else %}
+      <div style="margin-top:10px">{{ r['question_text'] or r['custom_text'] or '—' }}</div>
+
+      {% if r['qimage'] %}
+        <div class="question-media">
+          <img src="{{ url_for('uploaded', name=r['qimage']) }}">
+        </div>
+      {% endif %}
+
+      {% if r['qfile'] %}
+        <div style="margin-top:8px">
+          <a class="btn" href="{{ url_for('uploaded', name=r['qfile']) }}">ملف السؤال</a>
+        </div>
+      {% endif %}
+
+      {% if r['custom_image_path'] %}
+        <div class="question-media">
+          <img src="{{ url_for('uploaded', name=r['custom_image_path']) }}">
+        </div>
+      {% endif %}
+
+      {% if r['custom_file_path'] %}
+        <div style="margin-top:8px">
+          <a class="btn" href="{{ url_for('uploaded', name=r['custom_file_path']) }}">ملف السؤال</a>
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" class="answer-form">
+        <input type="hidden" name="question_id" value="{{ r['qid'] or r['question_id'] }}">
+        <label>إجابتك
+          <textarea name="text_answer"></textarea>
+        </label>
+        <div class="answer-files">
+          <label>صورة الإجابة
+            <input type="file" name="image_answer" accept="image/*">
+          </label>
+          <label>ملف الإجابة
+            <input type="file" name="file_answer">
+          </label>
+        </div>
+        <br><button class="btn btn2">إرسال الإجابة</button>
+      </form>
+    {% endif %}
+  </div>
+{% endfor %}
+                   
+            
         '''
         return render_base('إدارة أسئلة الامتحان', render_template_string(body, exam=exam, bank=bank, rows=rows))
 
