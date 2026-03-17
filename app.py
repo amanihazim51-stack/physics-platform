@@ -523,6 +523,11 @@ def render_base(title, body):
         .tag{background:#fee2e2;color:#991b1b;border-radius:999px;padding:4px 10px;font-size:12px}
         .muted{color:#6b7280}.num{direction:ltr;unicode-bidi:embed}
         .q{border-top:1px solid #e5e7eb;padding-top:12px;margin-top:12px}
+        .question-media{margin-top:10px}
+        .question-media img{display:block;max-width:100%;height:auto;border-radius:12px}
+        .answer-form{margin-top:15px}
+        .answer-form textarea{min-height:120px}
+        .answer-files{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
       </style>
     </head>
     <body>
@@ -536,6 +541,10 @@ def render_base(title, body):
     </body>
     </html>
     ''', title=title, chapters=CHAPTERS)
+
+
+
+
 @app.route('/')
 def index():
     if supabase:
@@ -804,131 +813,92 @@ def student_exam_page(exam_id):
   {% for r in rows %}
     <div class="q">
       <b>سؤال {{ loop.index }}</b><br>
+{% if 'question' in r %}
+  <div style="margin-top:10px">{{ r['question']['text'] or '—' }}</div>
 
-      {% if 'question' in r %}
-        {{ r['question']['text'] or '—' }}
-
-        {% if r['question']['image_path'] %}
-          <div style="margin-top:10px">
-            <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}" style="max-width:220px;border-radius:12px">
-          </div>
-        {% endif %}
-
-        {% if r['question']['file_path'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
-
-        <form method="post" enctype="multipart/form-data" style="margin-top:12px">
-          <input type="hidden" name="question_id" value="{{ r['question']['id'] }}">
-          <label>إجابتك
-            <textarea name="text_answer"></textarea>
-          </label>
-          <div class="grid">
-            <label>صورة الإجابة
-              <input type="file" name="image_answer" accept="image/*">
-            </label>
-            <label>ملف الإجابة
-              <input type="file" name="file_answer">
-            </label>
-          </div>
-          <br><button class="btn btn2">إرسال الإجابة</button>
-        </form>
-
-      {% else %}
-        {{ r['question_text'] or r['custom_text'] or '—' }}
-
-        {% if r['qimage'] %}
-          <div style="margin-top:10px">
-            <img src="{{ url_for('uploaded', name=r['qimage']) }}" style="max-width:220px;border-radius:12px">
-          </div>
-        {% endif %}
-
-        {% if r['qfile'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['qfile']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
-
-        {% if r['custom_image_path'] %}
-          <div style="margin-top:10px">
-            <img src="{{ url_for('uploaded', name=r['custom_image_path']) }}" style="max-width:220px;border-radius:12px">
-          </div>
-        {% endif %}
-
-        {% if r['custom_file_path'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['custom_file_path']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
-
-        {% if r['qid'] %}
-          <form method="post" enctype="multipart/form-data" style="margin-top:12px">
-            <input type="hidden" name="question_id" value="{{ r['qid'] }}">
-            <label>إجابتك
-              <textarea name="text_answer"></textarea>
-            </label>
-            <div class="grid">
-              <label>صورة الإجابة
-                <input type="file" name="image_answer" accept="image/*">
-              </label>
-              <label>ملف الإجابة
-                <input type="file" name="file_answer">
-              </label>
-            </div>
-            <br><button class="btn btn2">إرسال الإجابة</button>
-          </form>
-        {% else %}
-          <div class="muted" style="margin-top:10px">السؤال المخصص لا يدعم التصحيح الذكي حاليًا</div>
-        {% endif %}
-      {% endif %}
+  {% if r['question']['image_path'] %}
+    <div class="question-media">
+      <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}">
     </div>
+  {% endif %}
+
+  {% if r['question']['file_path'] %}
+    <div style="margin-top:8px">
+      <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="answer-form">
+    <input type="hidden" name="question_id" value="{{ r['question']['id'] }}">
+    <label>إجابتك
+      <textarea name="text_answer"></textarea>
+    </label>
+    <div class="answer-files">
+      <label>صورة الإجابة
+        <input type="file" name="image_answer" accept="image/*">
+      </label>
+      <label>ملف الإجابة
+        <input type="file" name="file_answer">
+      </label>
+    </div>
+    <br><button class="btn btn2">إرسال الإجابة</button>
+  </form>
   {% else %}
-    <div class="muted">لا توجد أسئلة في هذا الامتحان بعد</div>
-  {% endfor %}
-</div>
+  <div style="margin-top:10px">{{ r['question_text'] or r['custom_text'] or '—' }}</div>
 
+  {% if r['qimage'] %}
+    <div class="question-media">
+      <img src="{{ url_for('uploaded', name=r['qimage']) }}">
+    </div>
+  {% endif %}
 
-   
+  {% if r['qfile'] %}
+    <div style="margin-top:8px">
+      <a class="btn" href="{{ url_for('uploaded', name=r['qfile']) }}">ملف السؤال</a>
+    </div>
+  {% endif %}
+
+  {% if r['custom_image_path'] %}
+    <div class="question-media">
+      <img src="{{ url_for('uploaded', name=r['custom_image_path']) }}">
+    </div>
+  {% endif %}
+
+  {% if r['custom_file_path'] %}
+    <div style="margin-top:8px">
+      <a class="btn" href="{{ url_for('uploaded', name=r['custom_file_path']) }}">ملف السؤال</a>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="answer-form">
+    <input type="hidden" name="question_id" value="{{ r['qid'] or r['question_id'] }}">
+    <label>إجابتك
+      <textarea name="text_answer"></textarea>
+    </label>
+    <div class="answer-files">
+      <label>صورة الإجابة
+        <input type="file" name="image_answer" accept="image/*">
+      </label>
+      <label>ملف الإجابة
+        <input type="file" name="file_answer">
+      </label>
+    </div>
+    <br><button class="btn btn2">إرسال الإجابة</button>
+  </form>
+{% endif %}
+      
+
+       
 
         
 
         
 
      
-          
+
+        
+
          
-          
-
-        
-
-       
-
-       
-
-        
-               
-       
-  
-   
-
-            
-
-            
-
-            
-               
-
-          
-
-          
-
-            
-
-            
-
-      
     '''
 
     return render_base(
@@ -1053,9 +1023,16 @@ def student_chapter(chapter_no):
       </form>
 
       {% if answered_qid == q['id'] %}
-      <div class="muted" style="margin-top:10px">نتيجة التصحيح: {{ result_text }}</div>
-      <div class="muted" style="margin-top:10px">الجواب النموذجي: {{ q['answer'] }}</div>
-      {% endif %}
+  <div class="muted" style="margin-top:10px">نتيجة التصحيح: {{ result_text }}</div>
+  <div class="muted" style="margin-top:10px">الجواب النموذجي: {{ q['answer'] }}</div>
+
+  {% if q['answer_image_path'] %}
+    <div class="muted" style="margin-top:8px">صورة الجواب النموذجي</div>
+    <div>
+      <img src="{{ url_for('uploaded', name=q['answer_image_path']) }}" style="max-width:220px;border-radius:12px">
+    </div>
+  {% endif %}
+{% endif %}
 
       {% if q['answer_image_path'] %}
       <div class="muted" style="margin-top:8px">صورة الجواب النموذجي</div>
@@ -1794,6 +1771,40 @@ def sb_questions_by_chapter(chapter_no):
     res = supabase.table('questions').select('*').eq('chapter', chapter_no).order('question_no').order('id').execute()
     return res.data or []
 
+def extract_chapter_number(title: str) -> int | None:
+    if not title:
+        return None
+
+    t = str(title).strip()
+
+    arabic_map = {
+        'الأول': 1, 'الاول': 1,
+        'الثاني': 2,
+        'الثالث': 3,
+        'الرابع': 4,
+        'الخامس': 5,
+        'السادس': 6,
+        'السابع': 7,
+        'الثامن': 8,
+        'التاسع': 9,
+    }
+
+    for word, num in arabic_map.items():
+        if word in t:
+            return num
+
+    import re
+    m = re.search(r'(\d+)', t)
+    if m:
+        return int(m.group(1))
+
+    return None
+
+
+
+
+
+
 @app.route('/teacher/exams', methods=['GET','POST'])
 @teacher_required
 def teacher_exams():
@@ -1902,8 +1913,12 @@ def manage_exam_questions(exam_id):
                 image = save_upload('custom_image')
                 filex = save_upload('custom_file')
 
+                exam_chapter = extract_chapter_number(exam.get('title', ''))
+                if not exam_chapter:
+                    exam_chapter = 1
+
                 res = sb_add_question(
-                    1,
+                    exam_chapter,
                     'تعريف',
                     request.form.get('custom_text', '').strip(),
                     request.form.get('custom_answer', '').strip(),
@@ -1915,6 +1930,7 @@ def manage_exam_questions(exam_id):
                     filex
                 )
 
+
                 if res and getattr(res, 'data', None):
                     new_q = res.data[0]
                     sb_add_exam_question(exam_id, new_q['id'])
@@ -1922,9 +1938,11 @@ def manage_exam_questions(exam_id):
             flash('تمت إضافة السؤال للامتحان')
             return redirect(url_for('manage_exam_questions', exam_id=exam_id))
 
-        bank = []
-        for ch_no in CHAPTERS.keys():
-            bank.extend(sb_questions_by_chapter(ch_no))
+        exam_chapter = extract_chapter_number(exam.get('title', ''))
+        if not exam_chapter:
+            exam_chapter = 1
+
+        bank = sb_questions_by_chapter(exam_chapter)
 
         rows = sb_exam_questions(exam_id)
 
@@ -2086,11 +2104,16 @@ def manage_exam_questions(exam_id):
             flash('تمت إضافة السؤال للامتحان')
             return redirect(url_for('manage_exam_questions', exam_id=exam_id))
 
+        exam_chapter = extract_chapter_number(exam['title'] or '')
+        if not exam_chapter:
+            exam_chapter = 1
+
         bank = c.execute('''
             SELECT *
             FROM questions
-            ORDER BY chapter ASC, COALESCE(question_no, 999999) ASC, id ASC
-        ''').fetchall()
+            WHERE chapter = ?
+            ORDER BY COALESCE(question_no, 999999) ASC, id ASC
+        ''', (exam_chapter,)).fetchall()
 
         eq = c.execute('''
             SELECT
