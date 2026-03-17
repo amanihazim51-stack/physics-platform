@@ -722,7 +722,6 @@ def student_dashboard():
         )
     )
 
-
 @app.route('/student/exams/<int:exam_id>', methods=['GET', 'POST'])
 @student_required
 def student_exam_page(exam_id):
@@ -806,94 +805,124 @@ def student_exam_page(exam_id):
             return redirect(url_for('student_exam_page', exam_id=exam_id))
 
         c.close()
-body = '''
-<div class="card">
-  <h3>أسئلة الامتحان</h3>
 
-  {% for r in rows %}
-    <div class="q">
-      <b>سؤال {{ loop.index }}</b><br>
+    body = '''
+    <div class="card">
+      <h3>أسئلة الامتحان</h3>
 
-      {% if 'question' in r %}
-        <div style="margin-top:10px">{{ r['question']['text'] or '—' }}</div>
+      {% for r in rows %}
+        <div class="q">
+          <b>سؤال {{ loop.index }}</b><br>
 
-        {% if r['question']['image_path'] %}
-          <div class="question-media">
-            <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}">
-          </div>
-        {% endif %}
+          {% if 'question' in r %}
+            <div style="margin-top:10px">{{ r['question']['text'] or '—' }}</div>
 
-        {% if r['question']['file_path'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
+            {% if r['question']['image_path'] %}
+              <div class="question-media">
+                <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}">
+              </div>
+            {% endif %}
 
-        <form method="post" enctype="multipart/form-data" class="answer-form">
-          <input type="hidden" name="question_id" value="{{ r['question']['id'] }}">
-          <label>إجابتك
-            <textarea name="text_answer"></textarea>
-          </label>
-          <div class="answer-files">
-            <label>صورة الإجابة
-              <input type="file" name="image_answer" accept="image/*">
-            </label>
-            <label>ملف الإجابة
-              <input type="file" name="file_answer">
-            </label>
-          </div>
-          <br><button class="btn btn2">إرسال الإجابة</button>
-        </form>
+            {% if r['question']['file_path'] %}
+              <div style="margin-top:8px">
+                <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
+              </div>
+            {% endif %}
 
+            <form method="post" enctype="multipart/form-data" class="answer-form">
+              <input type="hidden" name="question_id" value="{{ r['question']['id'] }}">
+              <label>إجابتك
+                <textarea name="text_answer"></textarea>
+              </label>
+              <div class="answer-files">
+                <label>صورة الإجابة
+                  <input type="file" name="image_answer" accept="image/*">
+</label>
+                <label>ملف الإجابة
+                  <input type="file" name="file_answer">
+                </label>
+              </div>
+              <br><button class="btn btn2">إرسال الإجابة</button>
+            </form>
+
+          {% else %}
+            <div style="margin-top:10px">{{ r['question_text'] or r['custom_text'] or '—' }}</div>
+
+            {% if r['qimage'] %}
+              <div class="question-media">
+                <img src="{{ url_for('uploaded', name=r['qimage']) }}">
+              </div>
+            {% endif %}
+
+            {% if r['qfile'] %}
+              <div style="margin-top:8px">
+                <a class="btn" href="{{ url_for('uploaded', name=r['qfile']) }}">ملف السؤال</a>
+              </div>
+            {% endif %}
+
+            {% if r['custom_image_path'] %}
+              <div class="question-media">
+                <img src="{{ url_for('uploaded', name=r['custom_image_path']) }}">
+              </div>
+            {% endif %}
+
+            {% if r['custom_file_path'] %}
+              <div style="margin-top:8px">
+                <a class="btn" href="{{ url_for('uploaded', name=r['custom_file_path']) }}">ملف السؤال</a>
+              </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="answer-form">
+              <input type="hidden" name="question_id" value="{{ r['qid'] or r['question_id'] }}">
+              <label>إجابتك
+                <textarea name="text_answer"></textarea>
+              </label>
+              <div class="answer-files">
+                <label>صورة الإجابة
+                  <input type="file" name="image_answer" accept="image/*">
+                </label>
+                <label>ملف الإجابة
+                  <input type="file" name="file_answer">
+                </label>
+              </div>
+              <br><button class="btn btn2">إرسال الإجابة</button>
+            </form>
+          {% endif %}
+        </div>
       {% else %}
-        <div style="margin-top:10px">{{ r['question_text'] or r['custom_text'] or '—' }}</div>
-
-        {% if r['qimage'] %}
-          <div class="question-media">
-            <img src="{{ url_for('uploaded', name=r['qimage']) }}">
-          </div>
-        {% endif %}
-
-        {% if r['qfile'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['qfile']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
-
-        {% if r['custom_image_path'] %}
-          <div class="question-media">
-            <img src="{{ url_for('uploaded', name=r['custom_image_path']) }}">
-          </div>
-        {% endif %}
-
-        {% if r['custom_file_path'] %}
-          <div style="margin-top:8px">
-            <a class="btn" href="{{ url_for('uploaded', name=r['custom_file_path']) }}">ملف السؤال</a>
-          </div>
-        {% endif %}
-
-        <form method="post" enctype="multipart/form-data" class="answer-form">
-          <input type="hidden" name="question_id" value="{{ r['qid'] or r['question_id'] }}">
-          <label>إجابتك
-            <textarea name="text_answer"></textarea>
-          </label>
-          <div class="answer-files">
-            <label>صورة الإجابة
-              <input type="file" name="image_answer" accept="image/*">
-            </label>
-            <label>ملف الإجابة
-              <input type="file" name="file_answer">
-            </label>
-          </div>
-          <br><button class="btn btn2">إرسال الإجابة</button>
-        </form>
-      {% endif %}
+        <div class="muted">لا توجد أسئلة في هذا الامتحان</div>
+      {% endfor %}
     </div>
-  {% else %}
-    <div class="muted">لا توجد أسئلة في هذا الامتحان</div>
-  {% endfor %}
-</div>
-'''
+    '''
+    return render_base(exam['title'], render_template_string(body, rows=rows))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1040,12 +1069,12 @@ def student_chapter(chapter_no):
   <div class="muted" style="margin-top:10px">نتيجة التصحيح: {{ result_text }}</div>
   <div class="muted" style="margin-top:10px">الجواب النموذجي: {{ q['answer'] }}</div>
 
-
       {% if q['answer_image_path'] %}
       <div class="muted" style="margin-top:8px">صورة الجواب النموذجي</div>
       <div>
         <img src="{{ url_for('uploaded', name=q['answer_image_path']) }}" style="max-width:220px;border-radius:12px">
       </div>
+      {% endif %}
       {% endif %}
     </div>
     {% else %}
