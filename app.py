@@ -805,16 +805,16 @@ def student_exam_page(exam_id):
     <div class="q">
       <b>سؤال {{ loop.index }}</b><br>
 
-      {% if r.get('question') %}
+      {% if 'question' in r %}
         {{ r['question']['text'] or '—' }}
 
-        {% if r['question'].get('image_path') %}
+        {% if r['question']['image_path'] %}
           <div style="margin-top:10px">
             <img src="{{ url_for('uploaded', name=r['question']['image_path']) }}" style="max-width:220px;border-radius:12px">
           </div>
         {% endif %}
 
-        {% if r['question'].get('file_path') %}
+        {% if r['question']['file_path'] %}
           <div style="margin-top:8px">
             <a class="btn" href="{{ url_for('uploaded', name=r['question']['file_path']) }}">ملف السؤال</a>
           </div>
@@ -1117,7 +1117,7 @@ def student_results():
     <div class="card"><h3>نتائجي</h3>
     {% for r in rows %}
       <div class="q">
-        {% if r.get('question') %}
+       {% if 'question' in r %}
           <b>سؤال {{ loop.index }}</b><br>
           {{ r['question']['text'] }}
         {% else %}
@@ -1656,9 +1656,15 @@ def teacher_analytics():
     '''
     return render_base('تحليل الأخطاء', render_template_string(body, summary=summary, top_questions=top_questions, weak_chapters=weak_chapters, weak_types=weak_types))
 
+
+
+
+
 @app.route('/teacher/answers', methods=['GET', 'POST'])
 @teacher_required
 def teacher_answers():
+    rows = []
+
     if request.method == 'POST':
         aid = int(request.form['answer_id'])
         action = request.form.get('action', 'save')
@@ -1674,7 +1680,27 @@ def teacher_answers():
                     request.form.get('teacher_score', '')
                 )
                 flash('تم حفظ الملاحظة والدرجة')
-            return redirect(url_for('teacher_answers'))
+        else:
+            c = conn()
+            if action == 'delete':
+                c.execute('DELETE FROM answers WHERE id=?', (aid,))
+                flash('تم حذف الإجابة')
+            else:
+                c.execute('''
+                    UPDATE answers
+                    SET teacher_note=?, teacher_score=?
+                    WHERE id=?
+                ''', (
+                    request.form.get('teacher_note', ''),
+                    request.form.get('teacher_score', ''),
+                    aid
+                ))
+                flash('تم حفظ الملاحظة والدرجة')
+            c.commit()
+            c.close()
+
+        return redirect(url_for('teacher_answers'))
+
     if supabase:
         rows = sb_answers_with_questions()
         for r in rows:
@@ -1696,6 +1722,23 @@ def teacher_answers():
             else:
                 r['student_name'] = 'طالب'
                 r['student_code'] = ''
+    else:
+        c = conn()
+        rows = c.execute('''
+            SELECT
+                a.*,
+                q.text AS question_text,
+                q.chapter AS chapter,
+                q.question_no AS question_no,
+                s.name AS student_name,
+                s.code AS student_code
+            FROM answers a
+            LEFT JOIN questions q ON q.id = a.question_id
+            LEFT JOIN students s ON s.id = a.student_id
+            ORDER BY a.id DESC
+        ''').fetchall()
+        c.close()
+
     body = '''
     <div class="card"><h3>إجابات الطلبة</h3>
     {% for r in rows %}
@@ -1706,19 +1749,21 @@ def teacher_answers():
         <div style="margin-top:8px"><b>السؤال:</b> {{ r['question_text'] or '—' }}</div>
         <div style="margin-top:8px"><b>إجابة الطالب:</b> {{ r['text_answer'] if r['text_answer'] else 'لا توجد إجابة نصية' }}</div>
         <div class="muted" style="margin-top:8px"><b>التصحيح الذكي:</b> {{ r['smart_result'] or '—' }}</div>
-<form method="post" style="margin-top:12px">
-  <input type="hidden" name="answer_id" value="{{ r['id'] }}">
-  <label>ملاحظة الأستاذ
-    <textarea name="teacher_note">{{ r['teacher_note'] or '' }}</textarea>
-  </label>
-  <label>درجة الأستاذ
-    <input type="number" step="0.01" name="teacher_score" value="{{ r['teacher_score'] or '' }}">
-  </label>
-  <div class="row" style="margin-top:10px">
-    <button class="btn btn2" name="action" value="save">حفظ</button>
-    <button class="btn btn3" name="action" value="delete" onclick="return confirm('هل تريد حذف هذه الإجابة؟')">حذف</button>
-  </div>
-</form>
+
+        <form method="post" style="margin-top:12px">
+          <input type="hidden" name="answer_id" value="{{ r['id'] }}">
+          <label>ملاحظة الأستاذ
+            <textarea name="teacher_note">{{ r['teacher_note'] or '' }}</textarea>
+          </label>
+          <label>درجة الأستاذ
+            <input type="number" step="0.01" name="teacher_score" value="{{ r['teacher_score'] or '' }}">
+          </label>
+          <div class="row" style="margin-top:10px">
+            <button class="btn btn2" name="action" value="save">حفظ</button>
+            <button class="btn btn3" name="action" value="delete" onclick="return confirm('هل تريد حذف هذه الإجابة؟')">حذف</button>
+          </div>
+        </form>
+
         {% if r['image_path'] %}
           <div style="margin-top:10px"><b>صورة الإجابة:</b></div>
           <div><img src="{{ url_for('uploaded', name=r['image_path']) }}" style="max-width:220px;border-radius:12px;margin-top:6px"></div>
@@ -1734,6 +1779,13 @@ def teacher_answers():
     </div>
     '''
     return render_base('إجابات الطلبة', render_template_string(body, rows=rows))
+
+
+
+
+
+
+     
 
 
 def sb_questions_by_chapter(chapter_no):
@@ -1761,7 +1813,10 @@ def teacher_exams():
                 }).execute()
             else:
                 c = conn()
-                c.execute('INSERT INTO exams(title, note) VALUES (?, ?)', (title, note))
+                c.execute('''
+                    INSERT INTO exams(title, exam_date, exam_time, note)
+                    VALUES (?, ?, ?, ?)
+                ''', (title, exam_date, exam_time, note))
                 c.commit()
                 c.close()
 
